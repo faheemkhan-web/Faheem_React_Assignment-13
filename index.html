@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Directory App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-input {
+            padding: 10px;
+            width: 300px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .user-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .user-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .user-card p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .loading, .error {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+        }
+        .error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script>
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            const [users, setUsers] = useState([]);
+            const [filteredUsers, setFilteredUsers] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [searchTerm, setSearchTerm] = useState('');
+            const searchInputRef = useRef(null);
+            const topRef = useRef(null);
+
+            // Task 1: Fetch Data using useEffect
+            useEffect(() => {
+                fetch('https://jsonplaceholder.typicode.com/users')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch users');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        setUsers(data);
+                        setFilteredUsers(data);
+                        setLoading(false);
+                    })
+                    .catch(error => {
+                        setError(error.message);
+                        setLoading(false);
+                    });
+            }, []);
+
+            // Task 4: Use useRef for Input Focus - Auto focus on load
+            useEffect(() => {
+                if (searchInputRef.current) {
+                    searchInputRef.current.focus();
+                }
+            }, []);
+
+            // Handle search input change
+            const handleSearchChange = (e) => {
+                const term = e.target.value;
+                setSearchTerm(term);
+
+                // Filter users based on search term
+                const filtered = users.filter(user =>
+                    user.name.toLowerCase().includes(term.toLowerCase()) ||
+                    user.email.toLowerCase().includes(term.toLowerCase()) ||
+                    user.address.city.toLowerCase().includes(term.toLowerCase())
+                );
+                setFilteredUsers(filtered);
+            };
+
+            // Task 5: Add Focus Button
+            const handleFocusInput = () => {
+                if (searchInputRef.current) {
+                    searchInputRef.current.focus();
+                }
+            };
+
+            // Task 6: Scroll to Top
+            const handleScrollToTop = () => {
+                if (topRef.current) {
+                    topRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+
+            // Task 7: Loading State
+            if (loading) {
+                return React.createElement('div', { className: 'loading' }, 'Loading...');
+            }
+
+            // Task 8: Error Handling
+            if (error) {
+                return React.createElement('div', { className: 'error' }, `Failed to fetch users: ${error}`);
+            }
+
+            return React.createElement('div', { ref: topRef, className: 'container' },
+                React.createElement('h1', null, 'User Directory'),
+                React.createElement('div', { className: 'search-container' },
+                    React.createElement('input', {
+                        ref: searchInputRef,
+                        type: 'text',
+                        placeholder: 'Search user...',
+                        value: searchTerm,
+                        onChange: handleSearchChange,
+                        className: 'search-input'
+                    }),
+                    React.createElement('button', {
+                        onClick: handleFocusInput,
+                        className: 'btn btn-primary'
+                    }, 'Focus Input'),
+                    React.createElement('button', {
+                        onClick: handleScrollToTop,
+                        className: 'btn btn-success'
+                    }, 'Scroll to Top')
+                ),
+                React.createElement('div', { className: 'user-grid' },
+                    filteredUsers.map(user =>
+                        React.createElement('div', { key: user.id, className: 'user-card' },
+                            React.createElement('h3', null, user.name),
+                            React.createElement('p', null, user.email),
+                            React.createElement('p', null, user.address.city)
+                        )
+                    )
+                ),
+                filteredUsers.length === 0 && searchTerm &&
+                    React.createElement('p', null, `No users found matching "${searchTerm}"`)
+            );
+        }
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>
